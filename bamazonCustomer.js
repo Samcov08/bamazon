@@ -42,11 +42,11 @@ function promptUser() {
         },
 
     ]).then(function(answers) {
+        // console.log("prompting user");
         var quantityNeeded = answers.Quantity;
         var IDrequested = answers.ID;
         purchaseOrder(IDrequested, quantityNeeded);
     });
-    // console.log("prompting user");
 };
 
 
