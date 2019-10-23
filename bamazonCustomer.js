@@ -29,7 +29,7 @@ function getAllProducts() {
 // prompt user for prechase- item # and item qty
 function promptUser() {
     inquirer.prompt([{
-            name: "name",
+            name: "ID",
             type: "input",
             message: "Please enter the item you would like to purhcase.",
             filter: Number
@@ -50,13 +50,22 @@ function promptUser() {
 };
 
 
-
-
 function updateItemById(updateItem, customerOrder) {
     // var query = "UPDATE products SET stock_quantity = stock_quantity-" + customerOrder + " WHERE item_id =" + updateItem;
     // console.log(query);
     connection.query("UPDATE products SET stock_quantity = stock_quantity-" + customerOrder + " WHERE item_id =" + updateItem, function(err, data) {
         console.log(data);
+        if (err) { console.log(err) };
+        if (amtNeeded <= res[0].stock_quantity) {
+            var totalCost = res[0].price * amtNeeded;
+            console.log("Good news your order is in stock!");
+            console.log("Your total cost for " + amtNeeded + " " + res[0].product_name + " is " + totalCost + " Thank you!");
+
+            connection.query("UPDATE products SET stock_quantity = stock_quantity - " + amtNeeded + "WHERE item_id = " + ID);
+        } else {
+            console.log("Insufficient quantity, sorry we do not have enough " + res[0].product_name + "to complete your order.");
+        };
+        displayProducts();
     });
 }
 
