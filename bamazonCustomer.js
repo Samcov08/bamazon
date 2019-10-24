@@ -21,7 +21,7 @@ connection.connect(function(err) {
 // clears table and displays all products to user
 function getAllProducts() {
     connection.query("SELECT * FROM products", function(err, data) {
-        console.log(data);
+        console.table(data);
         promptUser();
     });
 }
@@ -31,7 +31,7 @@ function promptUser() {
     inquirer.prompt([{
             name: "ID",
             type: "input",
-            message: "Please enter the item you would like to purhcase.",
+            message: "Please enter the ID of the item you would like to purchase.",
             filter: Number
         },
         {
@@ -45,34 +45,43 @@ function promptUser() {
         // console.log("prompting user");
         var quantityNeeded = answers.Quantity;
         var IDrequested = answers.ID;
-        purchaseOrder(IDrequested, quantityNeeded);
+        updateItemById(IDrequested, quantityNeeded);
     });
 };
 
 
 function updateItemById(updateItem, customerOrder) {
+    var currentStock;
+    var currentPrice;
     // var query = "UPDATE products SET stock_quantity = stock_quantity-" + customerOrder + " WHERE item_id =" + updateItem;
     // console.log(query);
-    connection.query("UPDATE products SET stock_quantity = stock_quantity-" + customerOrder + " WHERE item_id =" + updateItem, function(err, data) {
-        console.log(data);
-        if (err) { console.log(err) };
-        if (amtNeeded <= res[0].stock_quantity) {
-            var totalCost = res[0].price * amtNeeded;
-            console.log("Good news your order is in stock!");
-            console.log("Your total cost for " + amtNeeded + " " + res[0].product_name + " is " + totalCost + " Thank you!");
 
-            connection.query("UPDATE products SET stock_quantity = stock_quantity - " + amtNeeded + "WHERE item_id = " + ID);
+    // 1. get stock_quantity of selected item
+    connection.query("SELECT stock_quantity, price FROM products WHERE item_id = " + updateItem, function(err, res) {
+        if (err) {
+            consolelog(err);
+        }
+        currentStock = (res[0].stock_quantity);
+        currentPrice = (res[0].price);
+        // 2. compare vs quantity requested
+        // 3. If qty is bad, respond with "Item on backorder, please choose another item" and run promptUser function again 
+        if (customerOrder > currentStock) {
+            console.log("Not enough stock");
+
+            promptUser();
         } else {
-            console.log("Insufficient quantity, sorry we do not have enough " + res[0].product_name + "to complete your order.");
-        };
-        displayProducts();
-    });
-}
-
-function getProductById(productID) {
-    connection.query("SELECT * FROM products WHERE item_id =" + productID, function(err, data) {
-        console.log(data);
-    });
-}
+            // 4.  If qty is good update database with new qty (subtract stock_quantiy minus order qty) and give user their total (order qty * price)
+            var total = currentPrice * customerOrder
+            var newQty = currentStock - customerOrder
+            console.log("Your total is $" + total)
+            connection.query("UPDATE products SET stock_quantity = ? WHERE item_id =?", [newQty, updateItem], function(err, data) {
+                if (err) {
+                    console.log(err);
+                };
+            })
+            getAllProducts();
+        }
+    })
+};
 
 getAllProducts();
